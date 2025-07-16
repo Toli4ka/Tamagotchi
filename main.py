@@ -1,14 +1,19 @@
-# Main file can be uplaoded to the board to run on boot.
-
 from machine import Pin
 from time import sleep
+from display import Display
+from wifi import init_wifi
+from secrets import WIFI_SSID, WIFI_PASSWORD
+from weather import Weather  # Import Weather class
 
-led = Pin('LED', Pin.OUT)
-print('Blinking LED Example')
+# Initialize Wi-Fi
+init_wifi(WIFI_SSID, WIFI_PASSWORD)
 
-while True:
-    # led.value() returns the current state of the LED
-    # led.value(1) turns the LED on
-    # led.value(0) turns the LED off
-    led.value(not led.value())
-    sleep(0.5)
+display = Display()
+display.show()
+# display.animate_ball()
+# display.draw_cat(0, 0, width=64, height=64)
+
+# Draw weather data
+weather = Weather("Munich")
+display.draw_weather(weather.get_weather())
+
