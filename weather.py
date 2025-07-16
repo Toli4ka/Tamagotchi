@@ -8,23 +8,20 @@ class Weather:
         self.url = f"http://api.openweathermap.org/data/2.5/weather?q={self.city}&appid={WEATHER_API_KEY}&units=metric"
         
     def get_weather(self):
-        response = urequests.get(self.url)
+        # add error handling for network requests
+        try:
+            response = urequests.get(self.url)
+            if response.status_code != 200:
+                raise Exception(f"Bad response: {response.status_code}")
+        except Exception as e:
+            print(f"Error fetching weather data: {e}")
+            return None
         data = response.json()
         response.close()  # Close the response to free up resources
         if data.get("main") and data.get("weather"):
             temp = data["main"]["temp"]
             desc = data["weather"][0]["main"]
             humidity = data["main"]["humidity"]
-            if desc == "Clouds":
-                desc = "Cloudy"
-            elif desc == "Clear":
-                desc = "Sunny"
-            elif desc == "Rain":
-                desc = "Rainy"
-            elif desc == "Snow":
-                desc = "Snowy"
-            else:
-                desc = "Weather not recognized"
-            return f"{self.city}\nTemp: {int(temp)}C\n{desc}\nHum: {humidity}%"
+            return {"temp": int(temp), "humidity": humidity, "desc": desc}
         else:
-            return "No data"
+            return None
