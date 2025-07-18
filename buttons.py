@@ -8,24 +8,18 @@ class Button:
         self.debounce_ms = debounce_ms
         self._last_state = self.pin.value()
         self._last_time = utime.ticks_ms()
-        self._pressed = False
         self._just_pressed = False
 
     def update(self):
         current_state = self.pin.value()
         now = utime.ticks_ms()
+        self._just_pressed = False
         if current_state != self._last_state:
             if utime.ticks_diff(now, self._last_time) > self.debounce_ms:
                 self._last_state = current_state
                 self._last_time = now
                 if current_state == 0:  # Button pressed (active low)
-                    self._pressed = True
                     self._just_pressed = True
-                else:
-                    self._pressed = False
-        else:
-            self._just_pressed = False
-
 
     def was_pressed(self):
         # Returns True only once, on the frame the button was pressed.
@@ -34,7 +28,6 @@ class Button:
 
 class Buttons():
     def __init__(self, button_pins):
-        # button_pins: dict like {'left': 2, 'middle': 3, 'right': 4}
         self.buttons = [Button(pin, name) for name, pin in button_pins.items()]
         self.button_map = {btn.name: btn for btn in self.buttons}
 
@@ -44,7 +37,6 @@ class Buttons():
 
     def was_pressed(self, name):
         return self.button_map[name].was_pressed()
-
 
 # --- Example usage in main.py ---
 

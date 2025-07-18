@@ -11,19 +11,27 @@ class Display:
         self.display.sleep(False)
         self.display.fill(0)
 
+        self.mood_options = ["Water", "Walk", "Book", "Yoga", "Nap", "Snack", "Music", "EXIT"]
+        self.mood_selected_idx = 0
+        self.mood_window_start = 0
+        self.mood_window_size = 3
+
     def show(self):
         self.display.show()
 
     def clear(self):
         self.display.fill(0)
 
-    def draw_cat(self, x, y, width=64, height=64):
+    def text(self, string, x, y, color=1):
+        self.display.text(string, x, y, color)
+
+    def draw_cat(self, x, y, width=64, height=64, key=-1):
         # TODO: move thes byte array to a separate file?
         byte_array_cat = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 36, 0, 120, 0, 0, 0, 0, 0, 38, 1, 204, 0, 240, 0, 0, 0, 34, 3, 4, 1, 152, 0, 0, 0, 50, 6, 116, 3, 8, 0, 0, 0, 18, 12, 244, 6, 104, 0, 0, 0, 18, 25, 228, 12, 232, 0, 0, 0, 18, 19, 231, 249, 200, 0, 0, 0, 18, 16, 0, 0, 8, 0, 0, 0, 18, 240, 0, 0, 8, 0, 0, 0, 18, 128, 0, 0, 8, 0, 0, 0, 19, 128, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 6, 1, 136, 0, 0, 0, 16, 0, 9, 2, 72, 0, 0, 0, 48, 0, 9, 2, 72, 0, 0, 0, 32, 0, 9, 2, 72, 0, 0, 0, 32, 0, 0, 0, 8, 0, 0, 0, 32, 0, 0, 0, 8, 0, 0, 0, 32, 0, 0, 0, 24, 0, 0, 0, 32, 0, 0, 0, 16, 0, 0, 0, 32, 0, 0, 0, 16, 0, 0, 0, 32, 0, 0, 0, 112, 0, 0, 0, 96, 0, 0, 0, 64, 0, 0, 0, 67, 224, 127, 248, 64, 0, 0, 0, 70, 32, 64, 8, 96, 0, 0, 0, 68, 32, 64, 8, 32, 0, 0, 0, 68, 32, 192, 12, 32, 0, 0, 0, 76, 32, 128, 4, 48, 0, 0, 0, 120, 32, 128, 6, 16, 0, 0, 0, 0, 32, 128, 2, 16, 0, 0, 0, 0, 35, 128, 2, 16, 0, 0, 0, 0, 62, 0, 3, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         # Create a frame buffer from the byte array
         fb = framebuf.FrameBuffer(byte_array_cat, width, height, framebuf.MONO_HLSB)
         # Blit the frame buffer onto the display at position (x, y)
-        self.display.blit(fb, x, y, key=-1)
+        self.display.blit(fb, x, y, key=key)
 
     def draw_sun(self, x, y):
         self.display.ellipse(x+7, y+7, 4, 4, 1, f=False) # type: ignore
@@ -141,29 +149,65 @@ class Display:
         else:
             self.display.text("No data", 0, 0, 1)
 
-    def draw_smiley_face(self):
-        # Center coordinates and radius for the face
-        center_x = 64
-        center_y = 32
-        radius = 30
+    def draw_navigation(self):
+        # Draw navigation arrows
+        self.display.text('<', 0, 118, 1)  
+        self.display.text('[', 24, 118, 1)
+        self.display.text(']', 32, 118, 1)
+        self.display.text('>', 56, 118, 1)  
 
-        # Face outline
-        self.display.ellipse(center_x, center_y, radius, radius, 1, f=False) # type: ignore
+    def draw_mood_menu(self):
+        options = self.mood_options
+        selected_idx = self.mood_selected_idx
+        window_start = self.mood_window_start
+        window_size = self.mood_window_size
 
-        # Eyes
-        self.display.fill_rect(center_x - 10, center_y - 10, 6, 6, 1)   # Left eye
-        self.display.fill_rect(center_x + 10, center_y - 10, 6, 6, 1)   # Right eye
+        # Adjust window start if needed
+        if selected_idx < window_start:
+            window_start = selected_idx
+        elif selected_idx >= window_start + window_size:
+            window_start = selected_idx - window_size + 1
+        self.mood_window_start = window_start
 
-        # Smile (drawn as an arc using lines)
-        for x in range(-13, 14):
-            y = int(10 * ((1 - (x/13)**2)**0.5))
-            self.display.pixel(center_x + x, center_y + 8 + y, 1)
+        # Draw overlay in the center
+        menu_height = 34
+        menu_width = 64
+        # try to place on top
+        x0 = 0
+        y0 = 0
+        # x0 = 0
+        # y0 = 64
+        self.display.fill_rect(x0, y0, menu_width, menu_height, 0)
+        # self.display.rect(x0, y0, menu_width, menu_height, 1)
+        # draw just the button line
+        self.display.hline(x0+4, y0 + menu_height+4, menu_width-2*4, 1)
 
-        self.show()
+        y = y0 + 4
+        for i in range(window_start, min(window_start + window_size, len(options))):
+            prefix = ">" if i == selected_idx else " "
+            self.display.text(prefix + options[i], x0 + 6, y)
+            y += 10
 
-    def draw_main_screen(self):
+    def mood_menu_up(self):
+        # Wrap to last if at first
+        if self.mood_selected_idx == 0:
+            self.mood_selected_idx = len(self.mood_options) - 1
+        else:
+            self.mood_selected_idx -= 1
+
+    def mood_menu_down(self):
+        # Wrap to first if at last
+        if self.mood_selected_idx == len(self.mood_options) - 1:
+            self.mood_selected_idx = 0
+        else:
+            self.mood_selected_idx += 1
+
+    def draw_main_screen(self, cat_x=0, cat_y=32):
         self.clear()
         # Draw the main screen elements here
         self.draw_weather(Weather("Munich").get_weather())
-        self.draw_cat(0, 36)
-        self.show()
+        # self.display.text('TESTTEST', 0, 0, 1)  
+        # self.display.text('TESTTEST', 0, 10, 1) 
+        self.draw_cat(cat_x, cat_y)
+        self.draw_navigation()
+        # self.show()
