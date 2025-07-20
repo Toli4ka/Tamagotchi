@@ -11,8 +11,8 @@ class Display:
         self.display.sleep(False)
         self.display.fill(0)
 
-        self.mood_options = ["Water", "Walk", "Book", "Yoga", "Nap", "Snack", "Music", "EXIT"]
-        self.mood_selected_idx = 0
+        self.task_options = ["Water", "Walk", "Book", "Yoga", "Nap", "Snack", "Music", "EXIT"]
+        self.task_selected_idx = 0
         self.mood_window_start = 0
         self.mood_window_size = 3
 
@@ -138,6 +138,57 @@ class Display:
         else:
             self.draw_cloud(x, y)
 
+    def _draw_mood_heart(self, x_0, y_0):
+        black_pixels = [
+            (1,1),(2,1),(5,1),(6,1),
+            (0,2),(3,2),(4,2),(7,2),
+            (0,3),(7,3),
+            (1,4),(6,4),
+            (2,5),(5,5),
+            (3,6),(4,6)
+        ]
+
+        for x, y in black_pixels:
+            self.display.pixel(x_0 + x, y_0 + y, 1)
+
+    def _draw_mood_scale_bound(self, x_0, y_0):
+        x_0_scale = 10
+        x_scale = 52
+        y_scale = 6
+
+        self.display.hline(x_0+x_0_scale, y_0+1, x_scale, 1)
+        self.display.hline(x_0+x_0_scale, y_0+y_scale, x_scale, 1)
+        self.display.vline(x_0+x_0_scale, y_0+1, y_scale, 1)
+        self.display.vline(x_0+x_0_scale+x_scale-1, y_0+1, y_scale, 1)
+
+        # # Fill edge pixels
+        self.display.pixel(x_0+x_0_scale, y_0+1, 0)
+        self.display.pixel(x_0+x_0_scale, y_0+2, 0)
+        self.display.pixel(x_0+x_0_scale, y_0+5, 0)
+        self.display.pixel(x_0+x_0_scale, y_0+6, 0)
+        self.display.pixel(x_0+x_0_scale+1, y_0+1, 0)
+        self.display.pixel(x_0+x_0_scale+1, y_0+6, 0)
+        self.display.pixel(x_0+x_0_scale+1, y_0+2, 1)
+        self.display.pixel(x_0+x_0_scale+1, y_0+5, 1)
+
+        self.display.pixel(x_0+x_0_scale+x_scale-1, y_0+1, 0)
+        self.display.pixel(x_0+x_0_scale+x_scale-1, y_0+2, 0)
+        self.display.pixel(x_0+x_0_scale+x_scale-1, y_0+5, 0)
+        self.display.pixel(x_0+x_0_scale+x_scale-1, y_0+6, 0)
+        self.display.pixel(x_0+x_0_scale+x_scale-1-1, y_0+1, 0)
+        self.display.pixel(x_0+x_0_scale+x_scale-1-1, y_0+6, 0)
+        self.display.pixel(x_0+x_0_scale+x_scale-1-1, y_0+2, 1)
+        self.display.pixel(x_0+x_0_scale+x_scale-1-1, y_0+5, 1)
+
+    def draw_mood_scale(self, x_0, y_0, mood_score):
+        self._draw_mood_heart(x_0, y_0)
+        # then fill the scale n * mood_score
+        self.display.fill_rect(x_0 + 11, y_0 + 1, mood_score * 10, 6, 1)
+        # draw the bound of the scale
+        self._draw_mood_scale_bound(x_0, y_0)
+       
+
+
     def draw_weather(self, weather_data):
         if weather_data:
             temp = weather_data["temp"]
@@ -157,8 +208,8 @@ class Display:
         self.display.text('>', 56, 118, 1)  
 
     def draw_mood_menu(self):
-        options = self.mood_options
-        selected_idx = self.mood_selected_idx
+        options = self.task_options
+        selected_idx = self.task_selected_idx
         window_start = self.mood_window_start
         window_size = self.mood_window_size
 
@@ -190,19 +241,19 @@ class Display:
 
     def mood_menu_up(self):
         # Wrap to last if at first
-        if self.mood_selected_idx == 0:
-            self.mood_selected_idx = len(self.mood_options) - 1
+        if self.task_selected_idx == 0:
+            self.task_selected_idx = len(self.task_options) - 1
         else:
-            self.mood_selected_idx -= 1
+            self.task_selected_idx -= 1
 
     def mood_menu_down(self):
         # Wrap to first if at last
-        if self.mood_selected_idx == len(self.mood_options) - 1:
-            self.mood_selected_idx = 0
+        if self.task_selected_idx == len(self.task_options) - 1:
+            self.task_selected_idx = 0
         else:
-            self.mood_selected_idx += 1
+            self.task_selected_idx += 1
 
-    def draw_main_screen(self, cat_x=0, cat_y=32):
+    def draw_main_screen(self, mood_score=0, cat_x=0, cat_y=32):
         self.clear()
         # Draw the main screen elements here
         self.draw_weather(Weather("Munich").get_weather())
@@ -210,4 +261,5 @@ class Display:
         # self.display.text('TESTTEST', 0, 10, 1) 
         self.draw_cat(cat_x, cat_y)
         self.draw_navigation()
+        self.draw_mood_scale(x_0=1, y_0=100, mood_score=mood_score)  # Example mood score
         # self.show()

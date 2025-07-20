@@ -20,6 +20,7 @@ class TamagotchiApp:
         self.buttons = Buttons({'left': 20, 'middle': 19, 'right': 18})
         self.current_screen = Screen.MAIN
         self.mood_menu_active = False
+        self.mood_score = 0
         self.display.draw_main_screen()
 
     def draw_left_screen(self):
@@ -40,12 +41,15 @@ class TamagotchiApp:
         # self.display.draw_mood_menu()
 
     def draw_main_screen(self):
-        self.display.draw_main_screen()
+        self.display.draw_main_screen(self.mood_score)
+        # Draw mood score as stars
+        # stars = '*' * self.mood_score
+        # self.display.text(f"{stars}", 0, 100)
 
     def open_mood_menu(self):
         self.display.draw_cat(x=0, y=32, key=0)
         self.mood_menu_active = True
-        self.display.mood_selected_idx = 0
+        self.display.task_selected_idx = 0
         self.display.draw_mood_menu()
 
     def screen_navigation_logic(self):
@@ -72,12 +76,15 @@ class TamagotchiApp:
             self.display.draw_cat(x=0, y=32, key=0)
             self.display.draw_mood_menu()
         elif self.buttons.was_pressed('middle'):
-            if self.display.mood_options[self.display.mood_selected_idx] == "EXIT":
-                self.mood_menu_active = False
-                self.current_screen = Screen.MAIN
-                self.draw_main_screen()
-            else:
-                print(f"Selected mood: {self.display.mood_options[self.display.mood_selected_idx]}")
+            selected_task = self.display.task_options[self.display.task_selected_idx]
+            if selected_task != "EXIT":
+                if self.mood_score < 5:
+                    self.mood_score += 1
+                print(f"Selected mood: {selected_task}")
+                
+            self.mood_menu_active = False
+            self.current_screen = Screen.MAIN
+            self.draw_main_screen()
 
     def run(self):
         while True:
