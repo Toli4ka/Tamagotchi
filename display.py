@@ -81,10 +81,10 @@ class Display:
         self.display.pixel(x+15, y+10, 1)
         self.display.pixel(x+15, y+11, 1)
 
-    def draw_rain(self, x, y):
+    def draw_rain(self, x, y, rain_drops):
         self.draw_cloud(x, y-2)
         # Draw raindrops
-        for i in range(3):
+        for i in range(rain_drops):
             self.display.line(x+4+4*i, y+11, x+2+4*i, y+13, 1)
 
     def draw_snowflake(self, x, y):
@@ -127,13 +127,19 @@ class Display:
     def _draw_weather_icon(self, desc):
         x = 45
         y = 0
-        if desc == "Cloudy":
+        if desc == "Clouds" or desc == "Atmosphere":
             self.draw_cloud(x, y)
-        elif desc == "Sunny":
+        elif desc == "Clear":
             self.draw_sun(x, y)
-        elif desc == "Rainy":
-            self.draw_rain(x, y)
-        elif desc == "Snowy":
+        elif desc == "Rain":
+            self.draw_rain(x, y, rain_drops=3)
+        elif desc == "Drizzle":
+            self.draw_rain(x, y, rain_drops=1) 
+        elif desc == "Thunderstorm":
+            self.draw_cloud(x, y)
+            # Add lightning bolt
+            self.display.line(x+6, y+6, x+8, y+8, 1) #?
+        elif desc == "Snow":
             self.draw_snowflake(x, y)
         else:
             self.draw_cloud(x, y)
@@ -196,6 +202,7 @@ class Display:
             desc = weather_data["desc"]
             self.display.text(f"T:{temp}C", 0, 0, 1)
             self.display.text(f"H:{humidity}%", 0, 10, 1)
+            print(f"Weather: {temp}C, {humidity}%, {desc}")
             self._draw_weather_icon(desc)
         else:
             self.display.text("No data", 0, 0, 1)
