@@ -25,32 +25,28 @@ class TamagotchiApp:
 
     def draw_left_screen(self):
         self.display.clear()
-        self.display.text("LEFT", 0, 20)
-        self.display.text("SCREEN", 0, 30)
-        self.display.text("PLACEHOLDER", 0, 40)
+        self.display.text("LEFT", 0, 0)
+        self.display.text("SCREEN", 0, 10)
+        self.display.text("PLACEHOLDER", 0, 20)
         self.display.text("TESTTEST", 0, 100)
-        self.display.draw_cat(0, 64)
+        self.display.draw_cat_from_array(0, 32)
         self.display.text("TESTTEST", 0, 120)
 
     def draw_right_screen(self):
         self.display.clear()
-        self.display.text("TESTTEST", 0, 10)
-        self.display.text("RIGHT", 0, 20)
-        self.display.text("SCREEN", 0, 30)
-        self.display.text("PLACEHOLDER", 0, 40)
+        self.display.text("RIGHT", 0, 0)
+        self.display.text("SCREEN", 0, 10)
+        self.display.text("PLACEHOLDER", 0, 20)
         # self.display.draw_mood_menu()
 
     def draw_main_screen(self):
+        # self.display.clear()
         self.display.draw_main_screen(self.mood_score)
-        # Draw mood score as stars
-        # stars = '*' * self.mood_score
-        # self.display.text(f"{stars}", 0, 100)
 
     def open_mood_menu(self):
-        self.display.draw_cat(x=0, y=32, key=0)
         self.mood_menu_active = True
         self.display.task_selected_idx = 0
-        self.display.draw_mood_menu()
+        self.display.draw_mood_menu(mood_score=self.mood_score)
 
     def screen_navigation_logic(self):
         if self.buttons.was_pressed('left') and self.current_screen != Screen.LEFT:
@@ -67,25 +63,29 @@ class TamagotchiApp:
                 self.open_mood_menu()
 
     def mood_menu_logic(self):
+        # Do not now how to implement this yet
+        # if len(self.display.task_options) == 1:
+        #     self.display.text("Time to", 0, 17, 1)
+        #     self.display.text(" Relax", 0, 27, 1)
+        #     # self.display.draw_cat(x=0, y=32, key=0)
+        #     self.display.show()
         if self.buttons.was_pressed('left'):
             self.display.mood_menu_up()
-            self.display.draw_cat(x=0, y=32, key=0)
-            self.display.draw_mood_menu()
+            self.display.draw_mood_menu(mood_score=self.mood_score)
         elif self.buttons.was_pressed('right'):
             self.display.mood_menu_down()
-            self.display.draw_cat(x=0, y=32, key=0)
-            self.display.draw_mood_menu()
+            self.display.draw_mood_menu(mood_score=self.mood_score)
         elif self.buttons.was_pressed('middle'):
             selected_task = self.display.task_options[self.display.task_selected_idx]
             if selected_task != "EXIT":
-                if self.mood_score < 5:
+                if self.mood_score < self.display.max_mood_score:
                     self.mood_score += 1
-                print(f"Selected mood: {selected_task}")
-                
+                    self.display.task_options.remove(selected_task)
             self.mood_menu_active = False
             self.current_screen = Screen.MAIN
+            # return to main screen
             self.draw_main_screen()
-
+    
     def run(self):
         while True:
             self.buttons.update()
