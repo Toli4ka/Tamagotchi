@@ -32,35 +32,41 @@ class TamagotchiApp:
         self.display.draw_cat_from_array(0, 32)
         self.display.text("TESTTEST", 0, 120)
 
-    def draw_right_screen(self):
-        self.display.clear()
-        self.display.text("RIGHT", 0, 0)
-        self.display.text("SCREEN", 0, 10)
-        self.display.text("PLACEHOLDER", 0, 20)
-        # self.display.draw_mood_menu()
-
-    def draw_main_screen(self):
-        # self.display.clear()
-        self.display.draw_main_screen(self.mood_score)
-
     def open_mood_menu(self):
         self.mood_menu_active = True
         self.display.task_selected_idx = 0
         self.display.draw_mood_menu(mood_score=self.mood_score)
 
     def screen_navigation_logic(self):
-        if self.buttons.was_pressed('left') and self.current_screen != Screen.LEFT:
-            self.current_screen = Screen.LEFT
-            self.draw_left_screen()
-        elif self.buttons.was_pressed('right') and self.current_screen != Screen.RIGHT:
-            self.current_screen = Screen.RIGHT
-            self.draw_right_screen()
-        elif self.buttons.was_pressed('middle'):
-            if self.current_screen != Screen.MAIN:
+        # LEFT SCREEN LOGIC
+        if self.current_screen == Screen.LEFT:
+            if self.buttons.was_pressed('right'):
                 self.current_screen = Screen.MAIN
-                self.draw_main_screen()
-            else:
+                self.display.draw_main_screen(self.mood_score)
+            # If left or middle pressed, do nothing (implement later)
+
+        # MIDDLE SCREEN LOGIC
+        elif self.current_screen == Screen.MAIN:
+            if self.buttons.was_pressed('left'):
+                self.current_screen = Screen.LEFT
+                self.draw_left_screen()
+            elif self.buttons.was_pressed('right'):
+                self.current_screen = Screen.RIGHT
+                self.display.draw_right_screen()
+            elif self.buttons.was_pressed('middle'):
                 self.open_mood_menu()
+
+        # RIGHT SCREEN LOGIC
+        elif self.current_screen == Screen.RIGHT:
+            if self.buttons.was_pressed('left'):
+                self.current_screen = Screen.MAIN
+                self.display.draw_main_screen(self.mood_score)
+            elif self.buttons.was_pressed('middle'):
+                # Implement option selection logic here (SET, START, STOP)
+                pass
+            elif self.buttons.was_pressed('right'):
+                # Implement marker movement logic here
+                pass
 
     def mood_menu_logic(self):
         # Do not now how to implement this yet
@@ -84,7 +90,7 @@ class TamagotchiApp:
             self.mood_menu_active = False
             self.current_screen = Screen.MAIN
             # return to main screen
-            self.draw_main_screen()
+            self.display.draw_main_screen(self.mood_score)
     
     def run(self):
         while True:
