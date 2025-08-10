@@ -1,6 +1,6 @@
 from machine import Pin
 import utime
-from display import Display
+from display import Display, CoffeeTimer
 from wifi import init_wifi
 from secrets import WIFI_SSID, WIFI_PASSWORD
 from weather import Weather
@@ -19,6 +19,10 @@ class TamagotchiApp:
         self.display.show()
         self.buttons = Buttons({'left': 20, 'middle': 19, 'right': 18})
         self.current_screen = Screen.MAIN
+
+        self.coffee_timer = CoffeeTimer(total_seconds=120)
+        self.coffee_timer_active = False
+
         self.mood_menu_active = False
         self.mood_score = 0
         self.display.draw_main_screen()
@@ -52,7 +56,7 @@ class TamagotchiApp:
                 self.draw_left_screen()
             elif self.buttons.was_pressed('right'):
                 self.current_screen = Screen.RIGHT
-                self.display.draw_right_screen()
+                self.display.draw_right_screen(self.coffee_timer)
             elif self.buttons.was_pressed('middle'):
                 self.open_mood_menu()
 
@@ -61,12 +65,34 @@ class TamagotchiApp:
             if self.buttons.was_pressed('left'):
                 self.current_screen = Screen.MAIN
                 self.display.draw_main_screen(self.mood_score)
-            elif self.buttons.was_pressed('middle'):
-                # Implement option selection logic here (SET, START, STOP)
-                pass
-            elif self.buttons.was_pressed('right'):
-                # Implement marker movement logic here
-                pass
+            else:
+                self.coffee_timer_logic()
+
+    def coffee_timer_logic(self):
+        # Handle timer option selection
+        if self.buttons.was_pressed('middle'):
+            if not self.coffee_timer.running:
+                # Start timer
+                self.coffee_timer_active = True
+                self.coffee_timer.set_time(2, 0)
+                self.coffee_timer.running = True
+                self.coffee_timer.paused = False
+            elif self.coffee_timer.is_active():
+                # Pause timer
+                self.coffee_timer.pause()
+            elif self.coffee_timer.is_paused():
+                # Resume timer
+                self.coffee_timer.resume()
+                
+        elif self.buttons.was_pressed('right'):
+            self.coffee_timer.stop()
+        
+        elif self.buttons.was_pressed('left'):
+            # Return to main screen
+            self.coffee_timer_active = False
+            # self.coffee_timer.running = False
+            self.current_screen = Screen.MAIN
+            self.display.draw_main_screen(self.mood_score)
 
     def mood_menu_logic(self):
         # Do not now how to implement this yet
@@ -97,6 +123,11 @@ class TamagotchiApp:
             self.buttons.update()
             if self.mood_menu_active:
                 self.mood_menu_logic()
+                self.display.show()
+            elif self.coffee_timer_active:
+                self.display.draw_right_screen(self.coffee_timer)
+                self.coffee_timer_logic()
+                self.coffee_timer.update()
                 self.display.show()
             else:
                 self.screen_navigation_logic()

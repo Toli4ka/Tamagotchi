@@ -1,5 +1,5 @@
 import sh1106
-import time
+import utime
 import framebuf
 from machine import Pin, I2C
 from weather import Weather
@@ -16,6 +16,11 @@ class Display:
         self.task_selected_idx = 0
         self.mood_window_start = 0
         self.mood_window_size = 3
+
+        self.coffee_timer_seconds = 0
+        self.coffee_timer_running = False
+        self.last_coffee_timer_update = utime.ticks_ms()
+
 
     def show(self):
         self.display.show()
@@ -310,3 +315,73 @@ class Display:
         else:
             self.draw_navigation()
         self.draw_mood_scale(x_0=1, y_0=100, mood_score=mood_score)  # Example mood score
+
+    def draw_right_screen(self, coffee_timer, start_timer=False):
+        # coffee_timer = CoffeeTimer(total_seconds=120)
+
+        # this screen is for coffee timer.
+        # here wwe can set the timer with number of minutes and seconds
+        # timer numbers will be in the box separated by a colon
+        self.clear()
+        self.display.text("COFFEE", 8, 4, 1)
+        self.display.rect(0, 16, 64, 16, 1)
+
+        self.text(coffee_timer.get_time(), 14, 20, 1) # later this string will be updated with the timer
+
+        # if start_timer:
+        #     coffee_timer.update()
+        # coffee_timer.set_time(2, 0)  # Set initial time to 2 minutes
+
+
+        # self.display.text("Timer", 0, 10, 1)
+
+        # add submenu with options: SET, START, STOP
+        # And the marker for the current option
+        # Wiht middle butten to select the option
+        # if the timer is running, stop option will be shown, Othewise start and set options
+
+        self.draw_navigation()
+
+
+# implement timer
+class CoffeeTimer:
+    def __init__(self, total_seconds=0):
+        self.running = False
+        self.paused = False
+        self.total_seconds = total_seconds
+        self.seconds_left = total_seconds
+        self.last_update = utime.ticks_ms()
+
+    def set_time(self, minutes, seconds):
+        self.total_seconds = minutes * 60 + seconds
+        self.seconds_left = self.total_seconds
+
+    def update(self):
+        if self.running and not self.paused:
+            now = utime.ticks_ms()
+            if utime.ticks_diff(now, self.last_update) >= 1000:
+                if self.seconds_left > 0:
+                    self.seconds_left -= 1
+                    self.last_update = now
+                else:
+                    self.running = False
+
+    def stop(self):
+        self.running = False
+        self.paused = False
+        self.seconds_left = self.total_seconds
+
+    def pause(self):
+        self.paused = True
+
+    def resume(self):
+        self.paused = False
+
+    def is_active(self):
+        return self.running and not self.paused
+
+    def is_paused(self):
+        return self.running and self.paused
+
+    def get_time(self):
+        return f"{self.seconds_left // 60:02}:{self.seconds_left % 60:02}"
