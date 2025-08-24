@@ -20,21 +20,26 @@ class TamagotchiApp:
         self.buttons = Buttons({'left': 20, 'middle': 19, 'right': 18})
         self.current_screen = Screen.MAIN
 
-        self.coffee_timer = CoffeeTimer(total_seconds=120)
+        self.timer_total_seconds = 120
+        self.coffee_timer = CoffeeTimer(total_seconds=self.timer_total_seconds)
         self.coffee_timer_active = False
+        self.coffee_anim_frame = 0
+        self.last_anim_update = utime.ticks_ms()
 
         self.mood_menu_active = False
         self.mood_score = 0
         self.display.draw_main_screen()
 
     def draw_left_screen(self):
-        self.display.clear()
-        self.display.text("LEFT", 0, 0)
-        self.display.text("SCREEN", 0, 10)
-        self.display.text("PLACEHOLDER", 0, 20)
-        self.display.text("TESTTEST", 0, 100)
-        self.display.draw_cat_from_array(0, 32)
-        self.display.text("TESTTEST", 0, 120)
+        # self.display.clear()
+        # self.display.text("LEFT", 0, 0)
+        # self.display.text("SCREEN", 0, 10)
+        # self.display.text("PLACEHOLDER", 0, 20)
+        # self.display.text("TESTTEST", 0, 100)
+        # # self.display.draw_cat_from_array(0, 32)
+        # self.display.draw_cat(0, 32)
+        # self.display.text("TESTTEST", 0, 120)
+        self.display.animate_coffee_cup(x=0, y=0, delay_ms=200)
 
     def open_mood_menu(self):
         self.mood_menu_active = True
@@ -74,18 +79,20 @@ class TamagotchiApp:
             if not self.coffee_timer.running:
                 # Start timer
                 self.coffee_timer_active = True
-                self.coffee_timer.set_time(2, 0)
+                # self.coffee_timer.set_time(2, 0)
                 self.coffee_timer.running = True
-                self.coffee_timer.paused = False
-            elif self.coffee_timer.is_active():
-                # Pause timer
-                self.coffee_timer.pause()
-            elif self.coffee_timer.is_paused():
-                # Resume timer
-                self.coffee_timer.resume()
-                
+
+            else:
+                # Stop timer if running
+                self.coffee_timer.stop()
+
         elif self.buttons.was_pressed('right'):
-            self.coffee_timer.stop()
+            # Select time for timer
+            self.timer_total_seconds += 30
+            if self.timer_total_seconds > 180:
+                self.timer_total_seconds = 30
+            self.coffee_timer.set_time(self.timer_total_seconds)
+            self.display.draw_right_screen(self.coffee_timer)
         
         elif self.buttons.was_pressed('left'):
             # Return to main screen
@@ -121,11 +128,23 @@ class TamagotchiApp:
     def run(self):
         while True:
             self.buttons.update()
+            now = utime.ticks_ms()
             if self.mood_menu_active:
                 self.mood_menu_logic()
                 self.display.show()
             elif self.coffee_timer_active:
-                self.display.draw_right_screen(self.coffee_timer)
+                 # Advance animation frame every 200ms if timer is running
+                if self.coffee_timer.running and utime.ticks_diff(now, self.last_anim_update) > 150:
+                    self.coffee_anim_frame = (self.coffee_anim_frame + 1) % 6
+                    self.last_anim_update = now
+                    # To add a pause after a full loop
+                    if self.coffee_anim_frame == 0:
+                        self.last_anim_update += 500
+                self.display.draw_right_screen(
+                    self.coffee_timer, 
+                    animate=self.coffee_timer.running,
+                    animate_frame=self.coffee_anim_frame
+                    )
                 self.coffee_timer_logic()
                 self.coffee_timer.update()
                 self.display.show()
@@ -136,4 +155,7 @@ class TamagotchiApp:
 
 if __name__ == "__main__":
     app = TamagotchiApp()
+    import gc
+    print("Used memory:", gc.mem_alloc(), "bytes")
+    print("Free memory:", gc.mem_free(), "bytes")
     app.run()
