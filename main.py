@@ -124,27 +124,31 @@ class TamagotchiApp:
             self.current_screen = Screen.MAIN
             # return to main screen
             self.display.draw_main_screen(self.mood_score)
-    
-    def run(self):
-        while True:
-            self.buttons.update()
-            now = utime.ticks_ms()
-            if self.mood_menu_active:
-                self.mood_menu_logic()
-                self.display.show()
-            elif self.coffee_timer_active:
-                 # Advance animation frame every 200ms if timer is running
-                if self.coffee_timer.running and utime.ticks_diff(now, self.last_anim_update) > 150:
-                    self.coffee_anim_frame = (self.coffee_anim_frame + 1) % 6
-                    self.last_anim_update = now
-                    # To add a pause after a full loop
-                    if self.coffee_anim_frame == 0:
-                        self.last_anim_update += 500
-                self.display.draw_right_screen(
+
+    def _update_coffee_anim_frame(self, now):
+        if self.coffee_timer.running and utime.ticks_diff(now, self.last_anim_update) > 150:
+            self.coffee_anim_frame = (self.coffee_anim_frame + 1) % 6
+            self.last_anim_update = now
+            # To add a pause after a full loop
+            if self.coffee_anim_frame == 0:
+                self.last_anim_update += 500
+        self.display.draw_right_screen(
                     self.coffee_timer, 
                     animate=self.coffee_timer.running,
                     animate_frame=self.coffee_anim_frame
                     )
+
+    def run(self):
+        while True:
+            self.buttons.update()
+            now = utime.ticks_ms()
+            # MOOD MENU LOGIC
+            if self.mood_menu_active:
+                self.mood_menu_logic()
+                self.display.show()
+            # COFFEE TIMER LOGIC
+            elif self.coffee_timer_active:
+                self._update_coffee_anim_frame(now) 
                 self.coffee_timer_logic()
                 self.coffee_timer.update()
                 self.display.show()
