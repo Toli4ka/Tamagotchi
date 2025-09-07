@@ -3,7 +3,7 @@ import utime
 import framebuf
 from machine import Pin, I2C
 from weather import Weather
-from pixel_art import coffee_cup_frames
+from pixel_art import coffee_cup_frames, cat1_frames, cat2_frames, cat3_frames, cat4_frames, cat5_frames
 
 class Display:
     def __init__(self, i2c_bus=0, scl_pin=5, sda_pin=4, freq=400_000, x_size=128, y_size=64, rotate=0):
@@ -32,14 +32,7 @@ class Display:
     def text(self, string, x, y, color=1):
         self.display.text(string, x, y, color)
 
-    def draw_cat(self, x, y, width=64, height=64, key=-1):
-        # TODO: move thes byte array to a separate file?
-        byte_array_cat = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60, 0, 0, 0, 0, 0, 0, 0, 36, 0, 0, 0, 0, 0, 0, 0, 36, 0, 120, 0, 0, 0, 0, 0, 38, 1, 204, 0, 240, 0, 0, 0, 34, 3, 4, 1, 152, 0, 0, 0, 50, 6, 116, 3, 8, 0, 0, 0, 18, 12, 244, 6, 104, 0, 0, 0, 18, 25, 228, 12, 232, 0, 0, 0, 18, 19, 231, 249, 200, 0, 0, 0, 18, 16, 0, 0, 8, 0, 0, 0, 18, 240, 0, 0, 8, 0, 0, 0, 18, 128, 0, 0, 8, 0, 0, 0, 19, 128, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 8, 0, 0, 0, 16, 0, 6, 1, 136, 0, 0, 0, 16, 0, 9, 2, 72, 0, 0, 0, 48, 0, 9, 2, 72, 0, 0, 0, 32, 0, 9, 2, 72, 0, 0, 0, 32, 0, 0, 0, 8, 0, 0, 0, 32, 0, 0, 0, 8, 0, 0, 0, 32, 0, 0, 0, 24, 0, 0, 0, 32, 0, 0, 0, 16, 0, 0, 0, 32, 0, 0, 0, 16, 0, 0, 0, 32, 0, 0, 0, 112, 0, 0, 0, 96, 0, 0, 0, 64, 0, 0, 0, 67, 224, 127, 248, 64, 0, 0, 0, 70, 32, 64, 8, 96, 0, 0, 0, 68, 32, 64, 8, 32, 0, 0, 0, 68, 32, 192, 12, 32, 0, 0, 0, 76, 32, 128, 4, 48, 0, 0, 0, 120, 32, 128, 6, 16, 0, 0, 0, 0, 32, 128, 2, 16, 0, 0, 0, 0, 35, 128, 2, 16, 0, 0, 0, 0, 62, 0, 3, 240, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        # Create a frame buffer from the byte array
-        byte_array_coffee_cup = bytearray([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 127, 255, 255, 254, 0, 0, 0, 0, 136, 65, 4, 33, 0, 0, 0, 0, 196, 65, 4, 67, 0, 0, 0, 0, 68, 33, 8, 66, 0, 0, 0, 0, 36, 33, 8, 196, 0, 0, 0, 0, 46, 231, 123, 188, 0, 0, 0, 0, 22, 119, 123, 184, 0, 0, 0, 0, 19, 55, 115, 56, 0, 0, 0, 0, 9, 55, 115, 112, 0, 0, 0, 0, 13, 183, 119, 112, 0, 0, 0, 0, 4, 147, 118, 224, 0, 0, 0, 0, 6, 219, 102, 224, 0, 0, 0, 0, 2, 89, 100, 192, 0, 0, 0, 0, 1, 109, 109, 128, 0, 0, 0, 0, 1, 37, 105, 128, 0, 0, 0, 0, 0, 181, 107, 0, 0, 0, 0, 0, 0, 213, 87, 0, 0, 0, 0, 0, 0, 85, 86, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 4, 32, 4, 16, 0, 0, 0, 0, 24, 31, 248, 16, 0, 0, 0, 0, 12, 0, 0, 32, 0, 0, 0, 0, 4, 0, 0, 127, 128, 0, 0, 0, 2, 0, 0, 0, 192, 0, 0, 0, 1, 0, 0, 126, 96, 0, 0, 0, 1, 0, 0, 131, 32, 0, 0, 0, 1, 0, 0, 129, 160, 0, 0, 0, 6, 0, 0, 96, 160, 0, 0, 0, 4, 0, 0, 32, 160, 0, 0, 0, 4, 0, 0, 32, 160, 0, 0, 0, 6, 0, 31, 96, 160, 0, 0, 0, 8, 0, 0, 16, 160, 0, 0, 0, 8, 0, 0, 16, 160, 0, 0, 0, 28, 0, 7, 184, 160, 0, 0, 0, 16, 0, 0, 9, 32, 0, 0, 0, 16, 0, 0, 14, 96, 0, 0, 0, 24, 0, 1, 240, 192, 0, 0, 0, 32, 0, 0, 7, 128, 0, 0, 0, 32, 0, 0, 4, 0, 0, 0, 0, 32, 0, 0, 4, 0, 0, 0, 0, 127, 255, 255, 254, 0, 0, 0, 0, 127, 255, 255, 254, 0, 0, 0, 0, 127, 255, 255, 254, 0, 0, 0, 0, 127, 255, 255, 254, 0, 0, 0, 0, 63, 255, 255, 252, 0, 0, 0, 0, 31, 255, 255, 248, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-        fb = framebuf.FrameBuffer(byte_array_coffee_cup, width, height, framebuf.MONO_HLSB)
-        # Blit the frame buffer onto the display at position (x, y)
-        self.display.blit(fb, x, y, key=key)
+
 
     def draw_coffee_cup(self, x, y):
         # Flattened (x, y) pairs as bytes
@@ -52,16 +45,15 @@ class Display:
             self.display.pixel(x + xx, y + yy, 1)
 
     def draw_coffee_cup_frame(self, x, y, frame_idx, width=64, height=64, key=-1):
-        frame = coffee_cup_frames[frame_idx]
-        fb = framebuf.FrameBuffer(frame, width, height, framebuf.MONO_HLSB)
+        fb = framebuf.FrameBuffer(coffee_cup_frames[frame_idx], width, height, framebuf.MONO_HLSB)
         self.display.blit(fb, x, y, key=key)
 
-    def animate_coffee_cup(self, x, y, delay_ms=100):
-        for frame_idx in range(len(coffee_cup_frames)):
-            self.clear()
-            self.draw_coffee_cup_frame(x, y, frame_idx)
-            self.show()
-            utime.sleep_ms(delay_ms)
+    # def animate_coffee_cup(self, x, y, delay_ms=100):
+    #     for frame_idx in range(len(coffee_cup_frames)):
+    #         self.clear()
+    #         self.draw_coffee_cup_frame(x, y, frame_idx)
+    #         self.show()
+    #         utime.sleep_ms(delay_ms)
 
     def draw_cat_from_array(self, x, y, mood_score=0):
         pixel_array_cat_0 = [(30, 21), (31, 21), (32, 21), (33, 21), (28, 22), (29, 22), (30, 22), (33, 22), (34, 22), (45, 22), (46, 22), (47, 22), (48, 22), (27, 23), (28, 23), (34, 23), (44, 23), (45, 23), (48, 23), (49, 23), (26, 24), (27, 24), (30, 24), (31, 24), (32, 24), (34, 24), (43, 24), (44, 24), (49, 24), (25, 25), (26, 25), (29, 25), (30, 25), (31, 25), (32, 25), (34, 25), (42, 25), (43, 25), (46, 25), (47, 25), (49, 25), (24, 26), (25, 26), (28, 26), (29, 26), (30, 26), (31, 26), (32, 26), (34, 26), (41, 26), (42, 26), (45, 26), (46, 26), (47, 26), (49, 26), (24, 27), (27, 27), (28, 27), (29, 27), (30, 27), (31, 27), (34, 27), (35, 27), (36, 27), (37, 27), (38, 27), (39, 27), (40, 27), (41, 27), (44, 27), (45, 27), (46, 27), (49, 27), (24, 28), (49, 28), (21, 29), (22, 29), (23, 29), (24, 29), (49, 29), (21, 30), (49, 30), (3, 31), (4, 31), (5, 31), (6, 31), (19, 31), (20, 31), (21, 31), (49, 31), (3, 32), (6, 32), (7, 32), (19, 32), (49, 32), (3, 33), (7, 33), (8, 33), (17, 33), (18, 33), (19, 33), (49, 33), (3, 34), (8, 34), (17, 34), (49, 34), (3, 35), (4, 35), (8, 35), (9, 35), (16, 35), (17, 35), (49, 35), (4, 36), (5, 36), (9, 36), (16, 36), (49, 36), (5, 37), (9, 37), (10, 37), (16, 37), (49, 37), (5, 38), (6, 38), (10, 38), (11, 38), (12, 38), (16, 38), (49, 38), (6, 39), (12, 39), (13, 39), (14, 39), (15, 39), (16, 39), (49, 39), (6, 40), (7, 40), (33, 40), (34, 40), (35, 40), (36, 40), (43, 40), (44, 40), (45, 40), (46, 40), (49, 40), (7, 41), (8, 41), (9, 41), (49, 41), (9, 42), (10, 42), (11, 42), (49, 42), (11, 43), (12, 43), (13, 43), (48, 43), (49, 43), (13, 44), (14, 44), (15, 44), (16, 44), (17, 44), (18, 44), (48, 44), (18, 45), (46, 45), (47, 45), (48, 45), (18, 46), (19, 46), (20, 46), (46, 46), (20, 47), (21, 47), (22, 47), (44, 47), (45, 47), (46, 47), (22, 48), (23, 48), (24, 48), (25, 48), (26, 48), (27, 48), (28, 48), (29, 48), (30, 48), (31, 48), (32, 48), (33, 48), (34, 48), (35, 48), (36, 48), (37, 48), (38, 48), (39, 48), (40, 48), (41, 48), (42, 48), (43, 48), (44, 48)]
@@ -82,7 +74,36 @@ class Display:
 
         for xx, yy in pixel_cats[mood_score]:
             self.display.pixel(x + xx, y + yy, 1)
-           
+
+    def get_cat_anim_length(self, mood_score):
+        if mood_score == 1:
+            return len(cat1_frames)
+        elif mood_score == 2:
+            return len(cat2_frames)
+        elif mood_score == 3:
+            return len(cat3_frames)
+        elif mood_score == 4:
+            return len(cat4_frames)
+        elif mood_score == 5:
+            return len(cat5_frames)
+        return 1
+
+    def draw_cat_frame(self, x, y, mood_score, frame_idx, width=64, height=64, key=-1):
+        if mood_score == 1:
+            frames = cat1_frames
+        elif mood_score == 2:
+            frames = cat2_frames
+        elif mood_score == 3:
+            frames = cat3_frames
+        elif mood_score == 4:
+            frames = cat4_frames
+        elif mood_score == 5:
+            frames = cat5_frames
+
+        fb = framebuf.FrameBuffer(frames[frame_idx], width, height, framebuf.MONO_HLSB)
+        # Blit the frame buffer onto the display at position (x, y)
+        self.display.blit(fb, x, y, key=key)
+
     def draw_sun(self, x, y):
         self.display.ellipse(x+7, y+7, 4, 4, 1, f=False) # type: ignore
 
@@ -326,19 +347,23 @@ class Display:
         else:
             self.task_selected_idx += 1
 
-    def draw_main_screen(self, mood_score=0, cat_x=0, cat_y=36, draw_weather=True, mood_menu_navigation=False):
+    def draw_main_screen(self, mood_score=0, cat_x=0, cat_y=36, draw_weather=True, mood_menu_navigation=False, animate=False, frame_idx=0):
         self.clear()
         # Draw the main screen elements here
         if draw_weather:
             self.draw_weather(Weather("Munich").get_weather())
 
-        self.draw_cat_from_array(cat_x, cat_y, mood_score=mood_score)
+        if animate:
+            # We need to draw here one frame at a time. Not the whole animation 
+            self.draw_cat_frame(cat_x, cat_y, mood_score=mood_score, frame_idx=frame_idx)
+        else:
+            self.draw_cat_from_array(cat_x, cat_y, mood_score=mood_score)
         
         if mood_menu_navigation:
             self.draw_mood_menu_navigation()
         else:
             self.draw_navigation()
-        self.draw_mood_scale(x_0=1, y_0=100, mood_score=mood_score)  # Example mood score
+        self.draw_mood_scale(x_0=1, y_0=100, mood_score=mood_score)
 
     def draw_right_screen(self, coffee_timer, animate=False, animate_frame=0):
         self.clear()
@@ -348,7 +373,6 @@ class Display:
         self.text(coffee_timer.get_time(), 14, 20, 1)
 
         if animate:
-            # self.animate_coffee_cup(x=0, y=46, delay_ms=100)
             self.draw_coffee_cup_frame(x=0, y=46, frame_idx=animate_frame)
         else:
             self.draw_coffee_cup(x=0, y=46)

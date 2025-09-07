@@ -26,6 +26,11 @@ class TamagotchiApp:
         self.coffee_anim_frame = 0
         self.last_anim_update = utime.ticks_ms()
 
+        self.animate_cat = False
+        self.cat_anim_length = 0
+        self.cat_anim_frame_idx = 0
+        self.cat_anim_laset_update = utime.ticks_ms()
+
         self.mood_menu_active = False
         self.mood_score = 0
         self.display.draw_main_screen()
@@ -39,7 +44,8 @@ class TamagotchiApp:
         # # self.display.draw_cat_from_array(0, 32)
         # self.display.draw_cat(0, 32)
         # self.display.text("TESTTEST", 0, 120)
-        self.display.animate_coffee_cup(x=0, y=0, delay_ms=200)
+        # self.display.animate_coffee_cup(x=0, y=0, delay_ms=200)
+        pass
 
     def open_mood_menu(self):
         self.mood_menu_active = True
@@ -120,10 +126,17 @@ class TamagotchiApp:
                 if self.mood_score < self.display.max_mood_score:
                     self.mood_score += 1
                     self.display.task_options.remove(selected_task)
+
+                self.cat_anim_length = self.display.get_cat_anim_length(self.mood_score)
+                self.cat_anim_last_update = utime.ticks_ms()
+                self.cat_anim_frame_idx = 0 # start from first frame
+                self.animate_cat = True
+               
             self.mood_menu_active = False
             self.current_screen = Screen.MAIN
-            # return to main screen
-            self.display.draw_main_screen(self.mood_score)
+            # return to main screen without animation if EXIT was selected
+            if selected_task == "EXIT":
+                self.display.draw_main_screen(self.mood_score)
 
     def _update_coffee_anim_frame(self, now):
         if self.coffee_timer.running and utime.ticks_diff(now, self.last_anim_update) > 150:
@@ -138,10 +151,33 @@ class TamagotchiApp:
                     animate_frame=self.coffee_anim_frame
                     )
 
+    def _update_cat_anim_frame(self, now):
+        if utime.ticks_diff(now, self.cat_anim_last_update) > 200:
+            self.cat_anim_last_update = now
+            self.display.draw_main_screen(
+                self.mood_score,
+                frame_idx=self.cat_anim_frame_idx,
+                animate=True,
+                draw_weather=True,
+                mood_menu_navigation=False
+            )
+            self.cat_anim_frame_idx += 1
+            if self.cat_anim_frame_idx >= self.cat_anim_length:
+                self.animate_cat = False
+                self.display.draw_main_screen(self.mood_score)
+
     def run(self):
         while True:
             self.buttons.update()
             now = utime.ticks_ms()
+
+            # Cat Animation logic
+            if self.animate_cat:
+                self._update_cat_anim_frame(now)
+                self.display.show()
+                continue # Skip other logic while animating
+
+
             # MOOD MENU LOGIC
             if self.mood_menu_active:
                 self.mood_menu_logic()
