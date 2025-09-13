@@ -45,7 +45,7 @@ class TamagotchiApp:
         # self.display.draw_cat(0, 32)
         # self.display.text("TESTTEST", 0, 120)
         # self.display.animate_coffee_cup(x=0, y=0, delay_ms=200)
-        pass
+        self.display.draw_left_screen()
 
     def open_mood_menu(self):
         self.mood_menu_active = True
@@ -93,16 +93,18 @@ class TamagotchiApp:
                 self.coffee_timer.stop()
 
         elif self.buttons.was_pressed('right'):
-            # Select time for timer
-            self.timer_total_seconds += 30
-            if self.timer_total_seconds > 180:
-                self.timer_total_seconds = 30
-            self.coffee_timer.set_time(self.timer_total_seconds)
-            self.display.draw_right_screen(self.coffee_timer)
+            if not self.coffee_timer.running:
+                # Select time for timer
+                self.timer_total_seconds += 30
+                if self.timer_total_seconds > 180:
+                    self.timer_total_seconds = 30
+                self.coffee_timer.set_time(self.timer_total_seconds)
+                self.display.draw_right_screen(self.coffee_timer)
         
         elif self.buttons.was_pressed('left'):
             # Return to main screen
             self.coffee_timer_active = False
+            self.coffee_timer.set_time(self.timer_total_seconds)
             # self.coffee_timer.running = False
             self.current_screen = Screen.MAIN
             self.display.draw_main_screen(self.mood_score)
