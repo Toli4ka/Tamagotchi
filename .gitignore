@@ -2,3 +2,6 @@ secrets.py
 .vscode/
 .DS_Store
 .venv
+__pycache__/
+__pycache__
+db_response_schemas/
