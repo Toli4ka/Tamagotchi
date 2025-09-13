@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image # type: ignore
 from pathlib import Path
 
 def png_to_black_pixel_array(path):
@@ -29,7 +29,8 @@ def png_to_bytearray(path):
     """Convert a 64x64 PNG file to a byte array compatible with framebuf.MONO_HLSB."""
     image = Image.open(path).convert("1")
     width, height = image.size
-    assert width == 64 and height == 64, "Image must be 64x64"
+    # assert width == 64 and height == 64, "Image must be 64x64"
+    assert width % 8 == 0 and height % 8 == 0, "Image width and height must be multiples of 8"
     msb_bytes = image.tobytes()
     inverted_bytes = bytearray(~b & 0xFF for b in msb_bytes)
     return inverted_bytes
