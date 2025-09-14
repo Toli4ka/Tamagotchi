@@ -37,20 +37,9 @@ def _extract_sections(xml_text, tag_name):
         sections.append((attrs, inner))
     return sections
 
-def _extract_first_tag_text(xml_text, tag):
-    open_tag = "<{}>".format(tag)
-    close_tag = "</{}>".format(tag)
-    i = xml_text.find(open_tag)
-    if i == -1:
-        return None
-    j = xml_text.find(close_tag, i + len(open_tag))
-    if j == -1:
-        return None
-    return xml_text[i + len(open_tag):j]
-
 def _parse_departures(xml_text):
     """ 
-    Parses departures;
+    Parses departures from XML response of Deutsche Bahn Timetables API /plan endpoint;
     returns a list of dicts:
         { "stop_id": str,
           "departure": {line_number, planned_time, planned_platform, planned_path} or None
@@ -74,10 +63,10 @@ def _parse_departures(xml_text):
 
 def _parse_changes(xml_text):
     """
-    Parse timetable changes; 
-    returns a list of dicts:   
+    Parses changes from XML response of Deutsche Bahn Timetables API /fchg endpoint;
+    returns a list of dicts:
         { "stop_id": str,
-          "dp_changes": {changed_time, changed_platform, cancelled, other_changes}
+          "dp_changes": {changed_time, changed_platform, cancelled: bool, other_changes: bool}
         }
     """
     changes = []

@@ -10,7 +10,7 @@ except ImportError:
 
 from secrets import DB_CLIENT_ID, DB_CLIENT_SECRET, LOCAL_EVA_NO, DIRECTION
 from xml_parser import _parse_departures, _parse_changes
-from time_utils import _now_yymmdd, _now_hour, _now_yymmddhhmm
+from time_utils import _now_yymmdd, _now_hour, _now_yymmddhhmm, format_time
 
 class DeutscheBahn:
     def __init__(self):
@@ -27,7 +27,7 @@ class DeutscheBahn:
             response = requests.get(f"{self.url}/plan/{LOCAL_EVA_NO}/{date}/{hour}", headers=self.headers)
             if getattr(response, "status_code", 200) != 200:
                 raise Exception("Bad HTTP status: {}".format(response.status_code))
-            xml_text = response.text
+            xml_response = response.text
         except Exception as e:
             print("Error fetching trips:", e)
             try:
@@ -40,24 +40,27 @@ class DeutscheBahn:
                 response.close()
             except Exception:
                 pass
-        return _parse_departures(xml_text)
+        return _parse_departures(xml_response)
     
-    def filter_direction(self, direction, date, hour):
+    def filter_and_sort_trips(self, direction, date, hour):
+        """
+        Filters trips by direction and sorts them by planned departure time.
+        """
         planned_trips = self.get_trips_by_hour(date, hour)
+
         filtered_trips = []
         for trip in planned_trips:
             departure_info = trip.get("departure", "")
             planned_path = departure_info.get("planned_path", "") if departure_info else ""
             if direction in planned_path:
                 filtered_trips.append(trip)
+
+            def sort_by_time(trip):
+                departure_info = trip.get("departure", {})
+                return departure_info.get("planned_time", "")
+            filtered_trips.sort(key=sort_by_time)
+
         return filtered_trips
-    
-    def sort_trips_by_time(self, trips):
-        def sort_by_time(item):
-            departure_info = item.get("departure", {})
-            return departure_info.get("planned_time", "")
-        trips.sort(key=sort_by_time)
-        return trips
     
     def find_next_trip(self, direction):
         """
@@ -67,24 +70,25 @@ class DeutscheBahn:
         hour = _now_hour()
         time_now = _now_yymmddhhmm()
         for i in range(5):
-            filtered_trips = self.filter_direction(direction, date, hour)
-            sorted_trips = self.sort_trips_by_time(filtered_trips)
-            for trip in sorted_trips:
+            filtered_trips = self.filter_and_sort_trips(direction, date, hour)
+            for trip in filtered_trips:
                 departure_info = trip.get("departure", {})
                 planned_departure = departure_info.get("planned_time", "")
                 if planned_departure and planned_departure > time_now:
-                    print(f"Next trip to {direction}: {planned_departure}")
                     return trip
             hour = str((int(hour) + 1) % 24)                    
-        print(f"No more trips to {direction} today.")
+        print(f"No trips found.")
         return
     
     def get_changes(self):
+        """
+        Fetches all changes for the given station.
+        """
         try:
             response = requests.get(f"{self.url}/fchg/{LOCAL_EVA_NO}", headers=self.headers)
             if getattr(response, "status_code", 200) != 200:
                 raise Exception("Bad HTTP status: {}".format(getattr(response, "status_code", "unknown")))
-            xml_text = response.text
+            xml_response = response.text
         except Exception as e:
             print("Error fetching changes:", e)
             try:
@@ -97,49 +101,50 @@ class DeutscheBahn:
                 response.close()
             except Exception:
                 pass
-        return _parse_changes(xml_text)
+        return _parse_changes(xml_response)
     
     def lookup_trip_changes(self, trip):
+        """
+        Looks up changes for a specific trip.
+        """
         if not trip:
             return None
         stop_id = trip.get("stop_id")
         changes = self.get_changes()
         for change in changes:
             if change.get("stop_id") == stop_id:
-                print(f"Changes for trip {stop_id}: {change}")
                 return change
-        print(f"No changes for trip {stop_id}.")
         return None
-
-    def display_time(self, str_yymmddhhmm):
-        formatted_time = "{}:{}".format(str_yymmddhhmm[6:8], str_yymmddhhmm[8:10]) if len(str_yymmddhhmm) == 10 else "Unknown"
-        return formatted_time
     
     def get_trip_info(self, trip):
+        """
+        Composes a summary of the trip information including any changes.
+        Returns a dict with keys: 
+        {line_number, planned_time, planned_platform, changed_time, changed_platform, cancelled: bool, other_changes: bool}
+        """
         if not trip:
-            return "No trip info available."
+            return None
         departure_info = trip.get("departure", {})
         changes = self.lookup_trip_changes(trip)
-        line_number = departure_info.get("line_number", "Unknown")
-        planned_time = self.display_time(departure_info.get("planned_time", ""))
-        planned_platform = departure_info.get("planned_platform", "Unknown")
+        line_number = departure_info.get("line_number", "-")
+        planned_time = format_time(departure_info.get("planned_time", ""))
+        planned_platform = departure_info.get("planned_platform", "-")
         if changes: 
             changed_time = changes.get("dp_changes", {}).get("changed_time")
             changed_platform = changes.get("dp_changes", {}).get("changed_platform")
             cancelled = changes.get("dp_changes", {}).get("cancelled", False)
             other_changes = changes.get("dp_changes", {}).get("other_changes", False)
-        info = {"line_number": line_number,
+        trip_info = {"line_number": line_number,
                 "planned_time": planned_time,
                 "planned_platform": planned_platform,
-                "changed_time": self.display_time(changed_time) if changed_time else None,
+                "changed_time": format_time(changed_time) if changed_time else None,
                 "changed_platform": changed_platform if changed_platform else None,
                 "cancelled": cancelled if changes else False,
                 "other_changes": other_changes if changes else False}
-        return info
+        return trip_info
 
 if __name__ == "__main__":
     db = DeutscheBahn()
     next_trip = db.find_next_trip(DIRECTION)
-    # db.lookup_trip_changes(next_trip)
     print(db.get_trip_info(next_trip))
 

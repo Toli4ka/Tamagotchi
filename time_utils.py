@@ -20,3 +20,10 @@ def _now_yymmddhhmm():
         y, m, d, hh, mm, ss, wd, yd = time.localtime()
         return "{:02d}{:02d}{:02d}{:02d}{:02d}".format(y % 100, m, d, hh, mm)
     return datetime.datetime.now().strftime("%y%m%d%H%M")
+
+def format_time(time_str):
+    """
+    Converts time from YYMMDDHHMM to HH:MM format.
+    """
+    formatted_time = "{}:{}".format(time_str[6:8], time_str[8:10]) if len(time_str) == 10 else "--:--"
+    return formatted_time
