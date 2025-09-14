@@ -1,7 +1,7 @@
 
-#TODO make a request to fetch the changes
-#TODO implement the changes in the next trip info
+#TODO clean up the code
 #TODO make the code more robust (error handling, edge cases) 
+#TODO fetch second next trip
 
 try:
     import urequests as requests
@@ -57,7 +57,6 @@ class DeutscheBahn:
             departure_info = item.get("departure", {})
             return departure_info.get("planned_time", "")
         trips.sort(key=sort_by_time)
-        print(trips)
         return trips
     
     def find_next_trip(self, direction):
@@ -65,8 +64,8 @@ class DeutscheBahn:
         Finds the next trip in the given direction after the current time.
         """
         date = _now_yymmdd()
-        hour = "14"
-        time_now = "2509131440"
+        hour = _now_hour()
+        time_now = _now_yymmddhhmm()
         for i in range(5):
             filtered_trips = self.filter_direction(direction, date, hour)
             sorted_trips = self.sort_trips_by_time(filtered_trips)
@@ -112,14 +111,35 @@ class DeutscheBahn:
         print(f"No changes for trip {stop_id}.")
         return None
 
+    def display_time(self, str_yymmddhhmm):
+        formatted_time = "{}:{}".format(str_yymmddhhmm[6:8], str_yymmddhhmm[8:10]) if len(str_yymmddhhmm) == 10 else "Unknown"
+        return formatted_time
+    
+    def get_trip_info(self, trip):
+        if not trip:
+            return "No trip info available."
+        departure_info = trip.get("departure", {})
+        changes = self.lookup_trip_changes(trip)
+        line_number = departure_info.get("line_number", "Unknown")
+        planned_time = self.display_time(departure_info.get("planned_time", ""))
+        planned_platform = departure_info.get("planned_platform", "Unknown")
+        if changes: 
+            changed_time = changes.get("dp_changes", {}).get("changed_time")
+            changed_platform = changes.get("dp_changes", {}).get("changed_platform")
+            cancelled = changes.get("dp_changes", {}).get("cancelled", False)
+            other_changes = changes.get("dp_changes", {}).get("other_changes", False)
+        info = {"line_number": line_number,
+                "planned_time": planned_time,
+                "planned_platform": planned_platform,
+                "changed_time": self.display_time(changed_time) if changed_time else None,
+                "changed_platform": changed_platform if changed_platform else None,
+                "cancelled": cancelled if changes else False,
+                "other_changes": other_changes if changes else False}
+        return info
+
 if __name__ == "__main__":
     db = DeutscheBahn()
-    # test = db.get_trips_by_hour("250912", "16")
-    # filtered = db.filter_direction("Wächterhof", "250912", "16")
-    # print(test)
-    # print(filtered)
-    # db.get_changes()
     next_trip = db.find_next_trip(DIRECTION)
-    db.lookup_trip_changes(next_trip)
-
+    # db.lookup_trip_changes(next_trip)
+    print(db.get_trip_info(next_trip))
 
