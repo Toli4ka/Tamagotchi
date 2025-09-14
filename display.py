@@ -2,8 +2,7 @@ import sh1106
 import utime
 import framebuf
 from machine import Pin, I2C
-from weather import Weather
-from pixel_art import coffee_cup_frames, cat1_frames, cat2_frames, cat3_frames, cat4_frames, cat5_frames, cats, nav_arrow_down, nav_arrow_up, nav_arrow_left, nav_arrow_right, nav_middle, nav_play, nav_stop, nav_watch
+from pixel_art import coffee_cup_frames, cat1_frames, cat2_frames, cat3_frames, cat4_frames, cat5_frames, cats, nav_arrow_down, nav_arrow_up, nav_arrow_left, nav_arrow_right, nav_middle, nav_play, nav_stop, nav_watch, weather_broken_clouds, weather_clear_sky, weather_few_clouds, weather_mist, weather_rain, weather_scattered_clouds, weather_shower_rain, weather_snow, weather_thunderstorm
 
 class Display:
     def __init__(self, i2c_bus=0, scl_pin=5, sda_pin=4, freq=400_000, x_size=128, y_size=64, rotate=0):
@@ -32,8 +31,6 @@ class Display:
     def text(self, string, x, y, color=1):
         self.display.text(string, x, y, color)
 
-
-
     def draw_coffee_cup(self, x, y, width=64, height=64, key=-1):
         # # Flattened (x, y) pairs as bytes
         # pixel_array_coffee_cup = bytearray([
@@ -45,7 +42,6 @@ class Display:
         #     self.display.pixel(x + xx, y + yy, 1)
         fb = framebuf.FrameBuffer(coffee_cup_frames[0], width, height, framebuf.MONO_HLSB)
         self.display.blit(fb, x, y, key=key)
-
 
     def draw_coffee_cup_frame(self, x, y, frame_idx, width=64, height=64, key=-1):
         fb = framebuf.FrameBuffer(coffee_cup_frames[frame_idx], width, height, framebuf.MONO_HLSB)
@@ -83,116 +79,29 @@ class Display:
         fb = framebuf.FrameBuffer(frames[frame_idx], width, height, framebuf.MONO_HLSB)
         self.display.blit(fb, x, y, key=key)
 
-    def draw_sun(self, x, y):
-        self.display.ellipse(x+7, y+7, 4, 4, 1, f=False) # type: ignore
-
-        # Rays (4 sides)
-        self.display.fill_rect(x+6, y, 3, 2, 1)        # Top
-        self.display.fill_rect(x+6, y+13, 3, 2, 1)     # Bottom
-        self.display.fill_rect(x, y+6, 2, 3, 1)        # Left
-        self.display.fill_rect(x+13, y+6, 2, 3, 1)     # Right
-
-        # Diagonal rays (corners)
-        self.display.fill_rect(x+1, y+1, 2, 2, 1)      # Top-left
-        self.display.fill_rect(x+12, y+1, 2, 2, 1)     # Top-right
-        self.display.fill_rect(x+1, y+12, 2, 2, 1)     # Bottom-left
-        self.display.fill_rect(x+12, y+12, 2, 2, 1)    # Bottom-right
-
-    def draw_cloud(self, x, y):
-        # Outline
-        # Bottom
-        y = y - 3
-        self.display.hline(x+2, y+13, 12, 1)
-        self.display.pixel(x+1, y+12, 1)
-        self.display.pixel(x+14, y+12, 1)
-        self.display.pixel(x+15, y+11, 1)
-
-        # Lower left puff
-        self.display.pixel(x+1, y+11, 1)
-        self.display.pixel(x+1, y+10, 1)
-        self.display.pixel(x+2, y+9, 1)
-        self.display.hline(x+3, y+8, 2, 1)
-        self.display.pixel(x+4, y+7, 1)
-
-        # Left-middle puff
-        self.display.hline(x+5, y+6, 3, 1)
-        self.display.pixel(x+4, y+7, 1)
-        self.display.pixel(x+8, y+6, 1)
-
-        # Top bump
-        self.display.hline(x+8, y+5, 4, 1)
-        self.display.pixel(x+7, y+6, 1)
-        self.display.pixel(x+12, y+6, 1)
-
-        # Right bump
-        self.display.hline(x+12, y+7, 3, 1)
-        self.display.pixel(x+15, y+8, 1)
-        self.display.pixel(x+15, y+9, 1)
-        self.display.pixel(x+15, y+10, 1)
-        self.display.pixel(x+15, y+11, 1)
-
-    def draw_rain(self, x, y, rain_drops):
-        self.draw_cloud(x, y-2)
-        # Draw raindrops
-        for i in range(rain_drops):
-            self.display.line(x+4+4*i, y+11, x+2+4*i, y+13, 1)
-
-    def draw_snowflake(self, x, y):
-        # This draws an 8x8 snowflake, with center at (x+4, y+4)
-        # Center "hole"
-        self.display.pixel(x+4, y+4, 0)
-        # Main arms (up, down, left, right, 2 pixels each)
-        self.display.pixel(x+4, y+2, 1)
-        self.display.pixel(x+4, y+1, 1)
-        self.display.pixel(x+4, y+6, 1)
-        self.display.pixel(x+4, y+7, 1)
-        self.display.pixel(x+2, y+4, 1)
-        self.display.pixel(x+1, y+4, 1)
-        self.display.pixel(x+6, y+4, 1)
-        self.display.pixel(x+7, y+4, 1)
-        # Diagonal arms (make a 6-armed snowflake)
-        self.display.pixel(x+2, y+2, 1)
-        self.display.pixel(x+1, y+1, 1)
-        self.display.pixel(x+6, y+6, 1)
-        self.display.pixel(x+7, y+7, 1)
-        self.display.pixel(x+6, y+2, 1)
-        self.display.pixel(x+7, y+1, 1)
-        self.display.pixel(x+2, y+6, 1)
-        self.display.pixel(x+1, y+7, 1)
-
-        # Tips (make them a bit thicker for a stylized look)
-        # Vertical
-        self.display.pixel(x+8, y+3, 1)
-        self.display.pixel(x+8, y+12, 1)
-        # Horizontal
-        self.display.pixel(x+3, y+8, 1)
-        self.display.pixel(x+12, y+8, 1)
-        # Diagonal /
-        self.display.pixel(x+3, y+3, 1)
-        self.display.pixel(x+13, y+13, 1)
-        # Diagonal \
-        self.display.pixel(x+13, y+3, 1)
-        self.display.pixel(x+3, y+13, 1)
-
-    def _draw_weather_icon(self, desc):
-        x = 45
-        y = 0
-        if desc == "Clouds" or desc == "Atmosphere":
-            self.draw_cloud(x, y)
-        elif desc == "Clear":
-            self.draw_sun(x, y)
-        elif desc == "Rain":
-            self.draw_rain(x, y, rain_drops=3)
-        elif desc == "Drizzle":
-            self.draw_rain(x, y, rain_drops=1) 
-        elif desc == "Thunderstorm":
-            self.draw_cloud(x, y)
-            # Add lightning bolt
-            self.display.line(x+6, y+6, x+8, y+8, 1) #?
-        elif desc == "Snow":
-            self.draw_snowflake(x, y)
+    def _draw_weather_icon(self, icon, x=45, y=0, width=16, height=16, key=-1):
+        if icon == "01d" or icon == "01n":  # clear sky day/night
+            weather_icon = weather_clear_sky
+        elif icon == "02d" or icon == "02n":  # few clouds
+            weather_icon = weather_few_clouds
+        elif icon == "03d" or icon == "03n":  # scattered clouds
+            weather_icon = weather_scattered_clouds
+        elif icon == "04d" or icon == "04n":  # broken clouds
+            weather_icon = weather_broken_clouds
+        elif icon == "09d" or icon == "09n":  # shower rain
+            weather_icon = weather_shower_rain
+        elif icon == "10d" or icon == "10n":  # rain
+            weather_icon = weather_rain
+        elif icon == "11d" or icon == "11n":  # thunderstorm
+            weather_icon = weather_thunderstorm
+        elif icon == "13d" or icon == "13n":  # snow
+            weather_icon = weather_snow
+        elif icon == "50d" or icon == "50n":  # mist
+            weather_icon = weather_mist
         else:
-            self.draw_cloud(x, y)
+            return  # Unknown icon
+        fb = framebuf.FrameBuffer(weather_icon, width, height, framebuf.MONO_HLSB)
+        self.display.blit(fb, x, y, key=key)
 
     def _draw_mood_heart(self, x_0, y_0):
         black_pixels = [
@@ -248,11 +157,12 @@ class Display:
         if weather_data:
             temp = weather_data["temp"]
             humidity = weather_data["humidity"]
-            desc = weather_data["desc"]
+            icon = weather_data["icon"]
             self.display.text(f"T:{temp}C", 0, 0, 1)
             self.display.text(f"H:{humidity}%", 0, 10, 1)
-            # print(f"Weather: {temp}C, {humidity}%, {desc}")
-            self._draw_weather_icon(desc)
+            # print(f"Weather: {temp}C, {humidity}%, {icon}")
+            self._draw_weather_icon(icon)
+
         else:
             self.display.text("No data", 0, 0, 1)
 
@@ -294,7 +204,12 @@ class Display:
 
     def draw_mood_menu(self, mood_score):
         # Draw part of the main screen with mood menu navigation buttons
-        self.draw_main_screen(mood_score=mood_score, cat_x=0, cat_y=36, draw_weather=False, mood_menu_navigation=True)
+        self.clear()
+        self.draw_cat_from_array(0, 36, mood_score=mood_score)
+        self.draw_mood_scale(x_0=1, y_0=100, mood_score=mood_score)
+        self.draw_mood_menu_navigation()
+        
+        # self.draw_main_screen(mood_score=mood_score, cat_x=0, cat_y=36, draw_weather=False, mood_menu_navigation=True)
 
         options = self.task_options
         selected_idx = self.task_selected_idx
@@ -342,11 +257,11 @@ class Display:
         else:
             self.task_selected_idx += 1
 
-    def draw_main_screen(self, mood_score=0, cat_x=0, cat_y=36, draw_weather=True, mood_menu_navigation=False, animate=False, frame_idx=0):
+    def draw_main_screen(self, mood_score, weather_data, cat_x=0, cat_y=36, animate=False, frame_idx=0):
         self.clear()
         # Draw the main screen elements here
-        if draw_weather:
-            self.draw_weather(Weather("Höhenkirchen-Siegertsbrunn").get_weather())
+        if weather_data:
+            self.draw_weather(weather_data)
 
         if animate:
             # We need to draw here one frame at a time. Not the whole animation 
@@ -354,11 +269,8 @@ class Display:
         else:
             self.draw_cat_from_array(cat_x, cat_y, mood_score=mood_score)
         
-        if mood_menu_navigation:
-            self.draw_mood_menu_navigation()
-        else:
-            self.draw_navigation()
         self.draw_mood_scale(x_0=1, y_0=100, mood_score=mood_score)
+        self.draw_navigation()
 
     def draw_right_screen(self, coffee_timer, animate=False, animate_frame=0):
         self.clear()
@@ -377,20 +289,19 @@ class Display:
     def draw_left_screen(self):
         self.clear()
         self.display.text("TEST", 0, 0, 1)
+        self._draw_weather_icon(x=0, y=20, icon="01d")
+        self._draw_weather_icon(x=20, y=20, icon="02d")
+        self._draw_weather_icon(x=40, y=20, icon="03d")
+        self._draw_weather_icon(x=0, y=40, icon="04d")
+        self._draw_weather_icon(x=20, y=40, icon="09d")
+        self._draw_weather_icon(x=40, y=40, icon="10d")
+        self._draw_weather_icon(x=0, y=60, icon="11d")
+        self._draw_weather_icon(x=20, y=60, icon="13d")
+        self._draw_weather_icon(x=40, y=60, icon="50d")
         width = 8
         height = 8
-        fb = framebuf.FrameBuffer(nav_play, width, height, framebuf.MONO_HLSB)
-        self.display.blit(fb, 0, 118, key=-1)
 
-        fb = framebuf.FrameBuffer(nav_stop, width, height, framebuf.MONO_HLSB)
-        self.display.blit(fb, 10, 118, key=-1)
-
-        # fb = framebuf.FrameBuffer(nav_watch1, width, height, framebuf.MONO_HLSB)
-        # self.display.blit(fb, 20, 118, key=-1)
-
-        fb = framebuf.FrameBuffer(nav_watch, width, height, framebuf.MONO_HLSB)
-        self.display.blit(fb, 40, 116, key=-1)
-        # self.draw_navigation()
+        self.draw_navigation()
 
 # implement timer
 class CoffeeTimer:
