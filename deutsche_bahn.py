@@ -1,6 +1,3 @@
-
-#TODO clean up the code
-#TODO make the code more robust (error handling, edge cases) 
 #TODO fetch second next trip
 
 try:
@@ -78,8 +75,8 @@ class DeutscheBahn:
                     return trip
             hour = str((int(hour) + 1) % 24)                    
         print(f"No trips found.")
-        return
-    
+        return None
+        
     def get_changes(self):
         """
         Fetches all changes for the given station.
