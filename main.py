@@ -2,7 +2,7 @@ from machine import Pin
 import utime
 from display import Display, CoffeeTimer
 from wifi import init_wifi
-from secrets import WIFI_SSID, WIFI_PASSWORD
+from secrets import WIFI_SSID, WIFI_PASSWORD, CITY
 from weather import Weather
 from buttons import Buttons
 
@@ -20,21 +20,25 @@ class TamagotchiApp:
         self.buttons = Buttons({'left': 20, 'middle': 19, 'right': 18})
         self.current_screen = Screen.MAIN
 
-        self.coffee_timer = CoffeeTimer(total_seconds=120)
+        self.weather_data = Weather(CITY).get_weather()
+
+        self.timer_total_seconds = 120
+        self.coffee_timer = CoffeeTimer(total_seconds=self.timer_total_seconds)
         self.coffee_timer_active = False
+        self.coffee_anim_frame = 0
+        self.last_anim_update = utime.ticks_ms()
+
+        self.animate_cat = False
+        self.cat_anim_length = 0
+        self.cat_anim_frame_idx = 0
+        self.cat_anim_laset_update = utime.ticks_ms()
 
         self.mood_menu_active = False
         self.mood_score = 0
-        self.display.draw_main_screen()
+        self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
 
     def draw_left_screen(self):
-        self.display.clear()
-        self.display.text("LEFT", 0, 0)
-        self.display.text("SCREEN", 0, 10)
-        self.display.text("PLACEHOLDER", 0, 20)
-        self.display.text("TESTTEST", 0, 100)
-        self.display.draw_cat_from_array(0, 32)
-        self.display.text("TESTTEST", 0, 120)
+        self.display.draw_left_screen()
 
     def open_mood_menu(self):
         self.mood_menu_active = True
@@ -46,7 +50,7 @@ class TamagotchiApp:
         if self.current_screen == Screen.LEFT:
             if self.buttons.was_pressed('right'):
                 self.current_screen = Screen.MAIN
-                self.display.draw_main_screen(self.mood_score)
+                self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
             # If left or middle pressed, do nothing (implement later)
 
         # MIDDLE SCREEN LOGIC
@@ -64,7 +68,7 @@ class TamagotchiApp:
         elif self.current_screen == Screen.RIGHT:
             if self.buttons.was_pressed('left'):
                 self.current_screen = Screen.MAIN
-                self.display.draw_main_screen(self.mood_score)
+                self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
             else:
                 self.coffee_timer_logic()
 
@@ -74,25 +78,29 @@ class TamagotchiApp:
             if not self.coffee_timer.running:
                 # Start timer
                 self.coffee_timer_active = True
-                self.coffee_timer.set_time(2, 0)
+                # self.coffee_timer.set_time(2, 0)
                 self.coffee_timer.running = True
-                self.coffee_timer.paused = False
-            elif self.coffee_timer.is_active():
-                # Pause timer
-                self.coffee_timer.pause()
-            elif self.coffee_timer.is_paused():
-                # Resume timer
-                self.coffee_timer.resume()
-                
+
+            else:
+                # Stop timer if running
+                self.coffee_timer.stop()
+
         elif self.buttons.was_pressed('right'):
-            self.coffee_timer.stop()
+            if not self.coffee_timer.running:
+                # Select time for timer
+                self.timer_total_seconds += 30
+                if self.timer_total_seconds > 180:
+                    self.timer_total_seconds = 30
+                self.coffee_timer.set_time(self.timer_total_seconds)
+                self.display.draw_right_screen(self.coffee_timer)
         
         elif self.buttons.was_pressed('left'):
             # Return to main screen
             self.coffee_timer_active = False
+            self.coffee_timer.set_time(self.timer_total_seconds)
             # self.coffee_timer.running = False
             self.current_screen = Screen.MAIN
-            self.display.draw_main_screen(self.mood_score)
+            self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
 
     def mood_menu_logic(self):
         # Do not now how to implement this yet
@@ -113,19 +121,64 @@ class TamagotchiApp:
                 if self.mood_score < self.display.max_mood_score:
                     self.mood_score += 1
                     self.display.task_options.remove(selected_task)
+
+                self.cat_anim_length = self.display.get_cat_anim_length(self.mood_score)
+                self.cat_anim_last_update = utime.ticks_ms()
+                self.cat_anim_frame_idx = 0 # start from first frame
+                self.animate_cat = True
+               
             self.mood_menu_active = False
             self.current_screen = Screen.MAIN
-            # return to main screen
-            self.display.draw_main_screen(self.mood_score)
-    
+            # return to main screen without animation if EXIT was selected
+            if selected_task == "EXIT":
+                self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
+
+    def _update_coffee_anim_frame(self, now):
+        if self.coffee_timer.running and utime.ticks_diff(now, self.last_anim_update) > 150:
+            self.coffee_anim_frame = (self.coffee_anim_frame + 1) % 6
+            self.last_anim_update = now
+            # To add a pause after a full loop
+            if self.coffee_anim_frame == 0:
+                self.last_anim_update += 500
+        self.display.draw_right_screen(
+                    self.coffee_timer, 
+                    animate=self.coffee_timer.running,
+                    animate_frame=self.coffee_anim_frame
+                    )
+
+    def _update_cat_anim_frame(self, now):
+        if utime.ticks_diff(now, self.cat_anim_last_update) > 200:
+            self.cat_anim_last_update = now
+            self.display.draw_main_screen(
+                mood_score=self.mood_score,
+                frame_idx=self.cat_anim_frame_idx,
+                animate=True,
+                weather_data=self.weather_data
+                )
+            self.cat_anim_frame_idx += 1
+            if self.cat_anim_frame_idx >= self.cat_anim_length:
+                self.animate_cat = False
+                self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
+
     def run(self):
         while True:
             self.buttons.update()
+            now = utime.ticks_ms()
+
+            # Cat Animation logic
+            if self.animate_cat:
+                self._update_cat_anim_frame(now)
+                self.display.show()
+                continue # Skip other logic while animating
+
+
+            # MOOD MENU LOGIC
             if self.mood_menu_active:
                 self.mood_menu_logic()
                 self.display.show()
+            # COFFEE TIMER LOGIC
             elif self.coffee_timer_active:
-                self.display.draw_right_screen(self.coffee_timer)
+                self._update_coffee_anim_frame(now) 
                 self.coffee_timer_logic()
                 self.coffee_timer.update()
                 self.display.show()
@@ -136,4 +189,7 @@ class TamagotchiApp:
 
 if __name__ == "__main__":
     app = TamagotchiApp()
+    import gc
+    print("Used memory:", gc.mem_alloc(), "bytes")
+    print("Free memory:", gc.mem_free(), "bytes")
     app.run()
