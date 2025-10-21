@@ -17,7 +17,12 @@ class TrainFetcher:
     
     def _get_current_time(self):
         """Get current time with proper German timezone handling"""
-        ntptime.settime()
+        try:
+            ntptime.settime()
+        except Exception as e:
+            print(f"NTP sync failed: {e}")
+            # Fallback: use local time if NTP fails
+            pass
         utc_time = utime.localtime()
         y, m, d, hh, mm, ss, wd, yd = utc_time
         
