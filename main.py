@@ -2,9 +2,10 @@ from machine import Pin
 import utime
 from display import Display, CoffeeTimer
 from wifi import init_wifi
-from secrets import WIFI_SSID, WIFI_PASSWORD, CITY
+from secrets import WIFI_SSID, WIFI_PASSWORD, CITY, DIRECTION
 from weather import Weather
 from buttons import Buttons
+from micro_db import TrainFetcher
 
 class Screen:
     MAIN = 1
@@ -16,11 +17,20 @@ class TamagotchiApp:
     def __init__(self):
         init_wifi(WIFI_SSID, WIFI_PASSWORD)
         self.display = Display(rotate=90)
+        self.display.text("Loading", 4, 60, 1)
+        self.display.text("...", 18, 70, 1)
         self.display.show()
+
         self.buttons = Buttons({'left': 20, 'middle': 19, 'right': 18})
         self.current_screen = Screen.MAIN
 
         self.weather_data = Weather(CITY).get_weather()
+        if not self.weather_data: 
+            print("Using default weather data")
+            self.weather_data = {"temp": 0, "humidity": 0, "icon": "01d"}
+    
+        db = TrainFetcher()
+        self.train_data = db.get_next_trains(2)
 
         self.timer_total_seconds = 120
         self.coffee_timer = CoffeeTimer(total_seconds=self.timer_total_seconds)
@@ -36,9 +46,6 @@ class TamagotchiApp:
         self.mood_menu_active = False
         self.mood_score = 0
         self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
-
-    def draw_left_screen(self):
-        self.display.draw_left_screen()
 
     def open_mood_menu(self):
         self.mood_menu_active = True
@@ -57,7 +64,7 @@ class TamagotchiApp:
         elif self.current_screen == Screen.MAIN:
             if self.buttons.was_pressed('left'):
                 self.current_screen = Screen.LEFT
-                self.draw_left_screen()
+                self.display.draw_left_screen(self.train_data)
             elif self.buttons.was_pressed('right'):
                 self.current_screen = Screen.RIGHT
                 self.display.draw_right_screen(self.coffee_timer)
