@@ -1,39 +1,37 @@
-from machine import Pin
-import utime
+from machine import Pin, Timer
 
 class Button:
-    def __init__(self, pin_num, name, debounce_ms=50):
+    def __init__(self, pin_num, name, debounce_ms=200):
         self.pin = Pin(pin_num, Pin.IN, Pin.PULL_UP)
-        self.name = name
+        self.pin.irq(trigger=Pin.IRQ_FALLING, handler=self.button_pressed)
         self.debounce_ms = debounce_ms
-        self._last_state = self.pin.value()
-        self._last_time = utime.ticks_ms()
+        self.name = name
         self._just_pressed = False
+        self.debounce_timer = None
 
-    def update(self):
-        current_state = self.pin.value()
-        now = utime.ticks_ms()
-        self._just_pressed = False
-        if current_state != self._last_state:
-            if utime.ticks_diff(now, self._last_time) > self.debounce_ms:
-                self._last_state = current_state
-                self._last_time = now
-                if current_state == 0:  # Button pressed (active low)
-                    self._just_pressed = True
+    def reset_debounce(self, timer): # timer parameter for callback
+        self.debounce_timer = None
+
+    def button_pressed(self, pin): # pin parameter for handler
+        if self.debounce_timer is None:
+            self._just_pressed = True
+            self.debounce_timer = Timer(-1)
+            self.debounce_timer.init(
+                mode=Timer.ONE_SHOT, 
+                period=self.debounce_ms, 
+                callback=self.reset_debounce)
 
     def was_pressed(self):
-        # Returns True only once, on the frame the button was pressed.
-        return self._just_pressed
-
+        if self._just_pressed:
+            self._just_pressed = False
+            return True
+        return False
+    
 
 class Buttons():
     def __init__(self, button_pins):
         self.buttons = [Button(pin, name) for name, pin in button_pins.items()]
         self.button_map = {btn.name: btn for btn in self.buttons}
-
-    def update(self):
-        for btn in self.buttons:
-            btn.update()
 
     def was_pressed(self, name):
         return self.button_map[name].was_pressed()
