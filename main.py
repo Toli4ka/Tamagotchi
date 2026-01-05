@@ -1,5 +1,6 @@
 import utime
-from display import Display, CoffeeTimer
+from display import Display
+from coffee_timer import CoffeeTimer
 from wifi import init_wifi
 from secrets import WIFI_SSID, WIFI_PASSWORD, CITY, DIRECTION
 from weather import Weather
@@ -87,10 +88,20 @@ class TamagotchiApp:
                 self.coffee_timer_logic()
 
     def coffee_timer_logic(self):
+        # Timer finished
+        if self.coffee_timer.seconds_left == 0:    
+                    self.coffee_timer_active = False
+                    # Reset timer
+                    print("Coffee timer finished!")
+                    self.coffee_timer.set_time(self.timer_total_seconds)
+                    self.display.draw_right_screen(self.coffee_timer)
+                    self.vibro_motor.vibrate(1000)
+
         # Handle timer option selection
         if self.pressed_buttons['middle']:
             if not self.coffee_timer.running:
                 # Start timer
+                print("START coffee timer")
                 self.coffee_timer_active = True
                 # self.coffee_timer.set_time(2, 0)
                 self.coffee_timer.running = True
@@ -99,9 +110,11 @@ class TamagotchiApp:
             else:
                 # Stop timer if running
                 self.coffee_timer.stop()
+                print("STOP coffee timer")
                 # Reset timer
                 self.coffee_timer.set_time(self.timer_total_seconds)
                 self.display.draw_right_screen(self.coffee_timer)
+                self.coffee_timer_active = False
                 self.vibro_motor.vibrate(200)
 
         elif self.pressed_buttons['right']:
@@ -203,13 +216,6 @@ class TamagotchiApp:
                 self._update_coffee_anim_frame(now) 
                 self.coffee_timer_logic()
                 self.coffee_timer.update()
-                if not self.coffee_timer.running:
-                    # Timer finished
-                    self.coffee_timer_active = False
-                    # Reset timer
-                    self.coffee_timer.set_time(self.timer_total_seconds)
-                    self.display.draw_right_screen(self.coffee_timer)
-                    self.vibro_motor.vibrate(1000)
                 self.display.show()
             else:
                 self.screen_navigation_logic()
