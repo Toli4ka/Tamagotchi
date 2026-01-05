@@ -33,8 +33,9 @@ class Buttons():
         self.buttons = [Button(pin, name) for name, pin in button_pins.items()]
         self.button_map = {btn.name: btn for btn in self.buttons}
 
-    def was_pressed(self, name):
-        return self.button_map[name].was_pressed()
+    def get_all_pressed(self):
+        """Get dict of all button states and clear all flags"""
+        return {btn.name: btn.was_pressed() for btn in self.buttons}
 
 # --- Example usage in main.py ---
 
