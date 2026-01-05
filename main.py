@@ -1,10 +1,10 @@
-from machine import Pin
 import utime
 from display import Display, CoffeeTimer
 from wifi import init_wifi
 from secrets import WIFI_SSID, WIFI_PASSWORD, CITY, DIRECTION
 from weather import Weather
 from buttons import Buttons
+from vibro import VibroMotor
 from micro_db import TrainFetcher
 
 class Screen:
@@ -22,6 +22,8 @@ class TamagotchiApp:
         self.display.show()
 
         self.buttons = Buttons({'left': 20, 'middle': 19, 'right': 18})
+        self.pressed_buttons = {} 
+        self.vibro_motor = VibroMotor(pin_num=21)
         self.current_screen = Screen.MAIN
 
         self.weather_data = Weather(CITY).get_weather()
@@ -36,7 +38,7 @@ class TamagotchiApp:
         self.coffee_timer = CoffeeTimer(total_seconds=self.timer_total_seconds)
         self.coffee_timer_active = False
         self.coffee_anim_frame = 0
-        self.last_anim_update = utime.ticks_ms()
+        self.last_anim_update = utime.ticks_ms() # rename
 
         self.animate_cat = False
         self.cat_anim_length = 0
@@ -53,46 +55,56 @@ class TamagotchiApp:
         self.display.draw_mood_menu(mood_score=self.mood_score)
 
     def screen_navigation_logic(self):
+        # self.pressed_buttons = self.buttons.get_all_pressed()
         # LEFT SCREEN LOGIC
         if self.current_screen == Screen.LEFT:
-            if self.buttons.was_pressed('right'):
+            if self.pressed_buttons['right']:
                 self.current_screen = Screen.MAIN
                 self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
+                self.vibro_motor.vibrate(100)
             # If left or middle pressed, do nothing (implement later)
 
         # MIDDLE SCREEN LOGIC
         elif self.current_screen == Screen.MAIN:
-            if self.buttons.was_pressed('left'):
+            if self.pressed_buttons['left']:
                 self.current_screen = Screen.LEFT
                 self.display.draw_left_screen(self.train_data)
-            elif self.buttons.was_pressed('right'):
+                self.vibro_motor.vibrate(100)
+            elif self.pressed_buttons['right']:
                 self.current_screen = Screen.RIGHT
                 self.display.draw_right_screen(self.coffee_timer)
-            elif self.buttons.was_pressed('middle'):
+                self.vibro_motor.vibrate(100)
+            elif self.pressed_buttons['middle']:
                 self.open_mood_menu()
 
         # RIGHT SCREEN LOGIC
         elif self.current_screen == Screen.RIGHT:
-            if self.buttons.was_pressed('left'):
+            if self.pressed_buttons['left']:
                 self.current_screen = Screen.MAIN
                 self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
+                self.vibro_motor.vibrate(100)
             else:
                 self.coffee_timer_logic()
 
     def coffee_timer_logic(self):
         # Handle timer option selection
-        if self.buttons.was_pressed('middle'):
+        if self.pressed_buttons['middle']:
             if not self.coffee_timer.running:
                 # Start timer
                 self.coffee_timer_active = True
                 # self.coffee_timer.set_time(2, 0)
                 self.coffee_timer.running = True
+                self.vibro_motor.vibrate(200)
 
             else:
                 # Stop timer if running
                 self.coffee_timer.stop()
+                # Reset timer
+                self.coffee_timer.set_time(self.timer_total_seconds)
+                self.display.draw_right_screen(self.coffee_timer)
+                self.vibro_motor.vibrate(200)
 
-        elif self.buttons.was_pressed('right'):
+        elif self.pressed_buttons['right']:
             if not self.coffee_timer.running:
                 # Select time for timer
                 self.timer_total_seconds += 30
@@ -101,7 +113,7 @@ class TamagotchiApp:
                 self.coffee_timer.set_time(self.timer_total_seconds)
                 self.display.draw_right_screen(self.coffee_timer)
         
-        elif self.buttons.was_pressed('left'):
+        elif self.pressed_buttons['left']:
             # Return to main screen
             self.coffee_timer_active = False
             self.coffee_timer.set_time(self.timer_total_seconds)
@@ -110,19 +122,20 @@ class TamagotchiApp:
             self.display.draw_main_screen(mood_score=self.mood_score, weather_data=self.weather_data)
 
     def mood_menu_logic(self):
+        # self.pressed_buttons = self.buttons.get_all_pressed()
         # Do not now how to implement this yet
         # if len(self.display.task_options) == 1:
         #     self.display.text("Time to", 0, 17, 1)
         #     self.display.text(" Relax", 0, 27, 1)
         #     # self.display.draw_cat(x=0, y=32, key=0)
         #     self.display.show()
-        if self.buttons.was_pressed('left'):
+        if self.pressed_buttons['left']:
             self.display.mood_menu_up()
             self.display.draw_mood_menu(mood_score=self.mood_score)
-        elif self.buttons.was_pressed('right'):
+        elif self.pressed_buttons['right']:
             self.display.mood_menu_down()
             self.display.draw_mood_menu(mood_score=self.mood_score)
-        elif self.buttons.was_pressed('middle'):
+        elif self.pressed_buttons['middle']:
             selected_task = self.display.task_options[self.display.task_selected_idx]
             if selected_task != "EXIT":
                 if self.mood_score < self.display.max_mood_score:
@@ -135,6 +148,7 @@ class TamagotchiApp:
                 self.animate_cat = True
                
             self.mood_menu_active = False
+            self.vibro_motor.vibrate(100)
             self.current_screen = Screen.MAIN
             # return to main screen without animation if EXIT was selected
             if selected_task == "EXIT":
@@ -169,25 +183,33 @@ class TamagotchiApp:
 
     def run(self):
         while True:
-            self.buttons.update()
             now = utime.ticks_ms()
+            self.pressed_buttons = self.buttons.get_all_pressed()
 
             # Cat Animation logic
             if self.animate_cat:
                 self._update_cat_anim_frame(now)
                 self.display.show()
+                # TODO: find another way without continue
                 continue # Skip other logic while animating
-
 
             # MOOD MENU LOGIC
             if self.mood_menu_active:
                 self.mood_menu_logic()
                 self.display.show()
+
             # COFFEE TIMER LOGIC
             elif self.coffee_timer_active:
                 self._update_coffee_anim_frame(now) 
                 self.coffee_timer_logic()
                 self.coffee_timer.update()
+                if not self.coffee_timer.running:
+                    # Timer finished
+                    self.coffee_timer_active = False
+                    # Reset timer
+                    self.coffee_timer.set_time(self.timer_total_seconds)
+                    self.display.draw_right_screen(self.coffee_timer)
+                    self.vibro_motor.vibrate(1000)
                 self.display.show()
             else:
                 self.screen_navigation_logic()
